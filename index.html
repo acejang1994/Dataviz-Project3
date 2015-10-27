@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html>
+  
+  <head>
+    
+    <meta charset="utf-8">
+    <title>Global Attitudes</title>
+    <h1 align="center" class="center-title">Global Attitudes Visualization</h1>
+        <h4 align="center" class="names-header">Annabel Consilvio and James Jang</h4>
+
+    <!-- load D3 library -->
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.6/d3.min.js" charset="utf-8"></script>
+
+    <style>
+
+text {
+    font-family: sans-serif;
+}
+
+ .bar { 
+     stroke: white;
+     stroke-width: 2px;
+     fill: blue;
+ }
+
+ .value {
+     font-weight: bold;
+     font-size: 16px;
+     fill: blue;
+ }
+
+ .label {
+     font-size: 20px;
+ }
+
+ .title {
+     font-weight: bold;
+     font-size: 20px;
+     fill: black;
+ }
+
+div.center {
+     position: absolute;
+     width: 800px;
+     height: 500px;
+     top: 50%;
+     left: 50%;
+     margin-top: -250px;
+     margin-left: -400px;
+}
+
+span.top-align {
+  vertical-align: top;
+}
+
+    </style>
+
+  </head>
+  
+  <body>
+
+
+    <div>
+      <span>
+	<span class="top-align">Gender:</span>
+	<select class="filter" id="select-gender" multiple></select>
+	<span class="top-align">Age group:</span>
+	<select class="filter" id="select-age" multiple></select>
+	<span  class="top-align">Race:</span>
+	<select class="filter" id="select-race" multiple></select>
+	<span class="top-align">Base:</span>
+	<span class="top-align" id="span-base"></span>
+      </span>
+    </div>
+    <div>
+    <svg id="viz" height="500" width="1500" style="border: 1px solid grey;">
+    </svg>
+    </div>
+
+    <script>
+
+
+/*
+ * Demo: social media 2014 (fake data)
+ * 
+ */
+
+// call run when the page finishes loading
+
+window.addEventListener("load",run);
+      
+var GLOBAL = { data: [],
+           countries: ["United States",
+"Canada",
+"Britain",
+"France",
+"Germany",
+"Italy",
+"Spain",
+"Greece",
+"Poland",
+"Czech Republic",
+"Russia",
+"Turkey",
+"Egypt",
+"Jordan",
+"Lebanon",
+"Palest. ter.",
+"Tunisia",
+"Israel",
+"Australia",
+"China",
+"Indonesia",
+"Japan",
+"Malaysia",
+"Pakistan",
+"Philippines",
+"South Korea",
+"Argentina",
+"Bolivia",
+"Brazil",
+"Chile",
+"El Salvador",
+"Mexico",
+"Venezuela",
+"Ghana",
+"Kenya",
+"Nigeria",
+"Senegal",
+"South Africa",
+"Uganda"],
+           segments: ["Religion"],
+           update: updateSocialMedia
+         }
+
+function run () {
+    // initializeView();
+    // get data, call f when done
+ //    getDataRows(function(data) {
+ //        populateSelectors(data);
+	// setupEventListeners();
+	// DATA.all = data;
+	// updateData() });
+  getDataRows(function(data){
+    GLOBAL.data = data;
+    // updateOverview();
+    setupSocialMedia();
+    updateSocialMedia();
+  })
+}    
+
+function setupSocialMedia () {
+
+    var svg = d3.select("#viz");
+    var s = computeSizes(svg);
+    var barWidth = s.chartWidth/(2*GLOBAL.countries.length-1);
+    console.log("barwidth", barWidth);
+
+    // get rid of old view
+    svg.selectAll("g").remove();
+
+    svg.select("#title")
+    .text("Satisfied");
+
+    sel = svg.selectAll("g")
+    .data(GLOBAL.countries)
+    .enter().append("g")
+        // alternate way to position bars
+        // instead of placing each individually with x/y attributes
+        // place them with a "translate" transform
+    .attr("transform",
+          function(d,i) { return "translate("+(s.margin+(i*2)*barWidth)+",0)"; });
+
+    sel.append("rect")
+    .attr("class","bar")
+        .attr("x",0)
+    .attr("y",s.height-s.margin)
+    .attr("width",barWidth)
+    .attr("height",0);
+
+    sel.append("text")
+    .attr("class","value")
+    .attr("x",barWidth/2)
+    .attr("y",s.height-s.margin-20)
+    .attr("dy","0.3em")
+    .style("text-anchor","middle");
+
+    sel.append("text")
+    .attr("class","label")
+    .attr("x",barWidth/2)
+    .attr("y",s.margin+s.chartHeight+50)
+    .attr("dy","0.3em")
+    .style("text-anchor","middle")
+    .text(function(d) { return d; });
+}
+
+function updateSocialMedia () {
+
+    console.log("UPDATING SOCIAL MEDIA");
+
+    var svg = d3.select("#viz");
+    var s = computeSizes(svg);
+
+    var barWidth = s.chartWidth/(2*GLOBAL.countries.length-1);
+
+    // group data by values of gender/age/race columns
+    // independently, and accumulate the various counts
+    // in the 'counts' array
+
+    var counts = [];
+    var total_count = 0;
+    
+    GLOBAL.countries.forEach(function(country, i){
+    var c = countSplitByColumn(GLOBAL.data, function (r) { 
+      return r.COUNTRY ===  country}, "Q1"); 
+      total_count = c.all;
+      counts[i] = c.counts;
+    });
+    console.log(counts);
+
+
+
+    d3.select("#span-base") 
+    .text(total_count);
+
+    total_count = 1000;
+
+
+    // convert the counts dictionaries into arrays
+    // easier to work with in d3
+    // 
+    // Exercise: figure out what this does
+
+    counts.forEach(function(c,i) { 
+    // first convert to an array of entries
+    var d = d3.entries(c);  
+        // sort them
+    d.sort(function(a,b) { return d3.ascending(a.key,b.key); });
+    // then cumulate them
+    cumulate(d);
+    counts[i] = d;
+    })
+
+
+    // colors for the groups
+
+    var colorsRng = ["#003b5c","#227fb6","#67bbe2","#9bddf8"];
+
+    var colors = {
+    "Dissatisfied": colorsRng[0],
+    "Satisfied": colorsRng[1],
+    "Don't know": colorsRng[2],
+    "Refused": colorsRng[3]
+    };
+
+    var yPos = d3.scale.linear() 
+    .domain([0,total_count])
+    .range([s.height-s.margin,s.margin]);
+
+    var height = d3.scale.linear() 
+    .domain([0,total_count])
+    .range([0,s.chartHeight]);
+
+
+    sel = svg.selectAll("g") 
+    .data(counts);
+
+    var bars = sel.selectAll(".bar")
+    .data(function(d) { return d;});
+
+    console.log("barwidth", barWidth);
+    bars.enter().append("rect")
+    .attr("class","bar")
+    .style("fill",function(d,i) {
+      return colors[d.key]; })
+    .attr("y",yPos(0))
+    .attr("height",0)
+    .attr("width",barWidth);
+    bars.exit().remove()
+
+    sel.selectAll(".bar")
+    .on("mouseover",function() { this.style.fill = "grey"; })
+    .on("mouseout",function(d,i) { this.style.fill = colors[d.key]; })
+    .transition()
+    .duration(1000)
+    .attr("y",function(d) { return yPos(d.cumulative+d.value); })
+    .attr("height",function(d) { return height(d.value); })
+    .style("fill",function(d,i) { return colors[d.key]; })
+
+    var values = sel.selectAll(".value")
+    .data(function(d) { return d;});
+
+    values.enter().append("text")
+    .attr("class","value")
+    .attr("x",barWidth/2)
+    .attr("y",s.height-s.margin)
+    .attr("dy","0.3em")
+    .style("text-anchor","middle")
+    values.exit().remove();
+
+    sel.selectAll(".value")
+    .style("fill","white")
+    .transition()
+    .duration(1000)
+    .attr("y",function(d) { return yPos(d.cumulative+d.value/2); })
+    .text(function(d) { return Math.round(100*d.value/total_count)+"%"; });
+}
+
+
+function cumulate (arr) {
+    var cumulative = 0;
+    for (var i=0; i<arr.length; i++) {
+    arr[i].cumulative = cumulative;
+    cumulative += arr[i].value;
+    }
+}
+
+function countSplitByColumn (data, selectors, question) { 
+    var counts = { };
+    var all = 0;
+    data.forEach(function(r) {
+    if (selectors(r)) { 
+        all += 1;
+        c = r[question];
+        if (c in counts) {
+        counts[c] += 1;
+        } else {
+        counts[c] = 1;
+        }
+    }
+    });
+    return {all:all,counts:counts};
+}
+
+function computeSizes (svg) { 
+    
+    // get the size of the SVG element
+    var height = svg.attr("height");
+    var width = svg.attr("width");
+    var margin = 100;
+
+    // the chart lives in the svg surrounded by a margin of 100px
+
+    return {height:height,
+        width: width,
+        margin: margin,
+        chartHeight: height-2*margin,
+        chartWidth: width-2*margin}
+}  
+
+/* depending on your browser and your local configuration,
+   you may need to have a web server deliver the file data.csv
+   just use the default python web server */
+
+function getDataRows (f) {
+    d3.csv("america.csv", function(error,data) {
+               console.log(data);
+	       f(data);
+	   });
+}
+
+// function getQuestion1(data){
+//   var count = {country: null,Satisfied : 0, Dissatisfied : 0, "Don't know" : 0}
+//   data.forEach(function(d){
+//     count.country
+//     if (d.COUNTRY === "United States"){      
+//       if (d.Q1 === "Satisfied"){
+//         count.Satisfied += 1;  
+//       }
+//       if (d.Q1 === "Dissatisfied"){
+//         count.Dissatisfied +=1;
+//       }
+//       if (d.Q1 === "Don't know"){
+//         count["Don't know"] +=1;
+//       }  
+//     }
+//   })
+//   console.log(count);
+// }
+
+      
+    </script>
+    
+  </body>
+  
+</html>
