@@ -74,7 +74,7 @@ span.top-align {
       </span>
     </div>
     <div>
-    <svg id="viz" height="500" width="1500" style="border: 1px solid grey;">
+    <svg id="viz" height="800" width="1000" style="border: 1px solid grey;">
     </svg>
     </div>
 
@@ -91,8 +91,7 @@ span.top-align {
 window.addEventListener("load",run);
       
 var GLOBAL = { data: [],
-           countries: ["United States",
-"Canada",
+           countries: [
 "Britain",
 "France",
 "Germany",
@@ -101,35 +100,7 @@ var GLOBAL = { data: [],
 "Greece",
 "Poland",
 "Czech Republic",
-"Russia",
-"Turkey",
-"Egypt",
-"Jordan",
-"Lebanon",
-"Palest. ter.",
-"Tunisia",
-"Israel",
-"Australia",
-"China",
-"Indonesia",
-"Japan",
-"Malaysia",
-"Pakistan",
-"Philippines",
-"South Korea",
-"Argentina",
-"Bolivia",
-"Brazil",
-"Chile",
-"El Salvador",
-"Mexico",
-"Venezuela",
-"Ghana",
-"Kenya",
-"Nigeria",
-"Senegal",
-"South Africa",
-"Uganda"],
+"Turkey"],
            segments: ["Religion"],
            update: updateSocialMedia
          }
@@ -154,8 +125,8 @@ function setupSocialMedia () {
 
     var svg = d3.select("#viz");
     var s = computeSizes(svg);
-    var barWidth = s.chartWidth/(2*GLOBAL.countries.length-1);
-    console.log("barwidth", barWidth);
+    var barHeight = s.chartHeight/(2*GLOBAL.countries.length-1);
+
 
     // get rid of old view
     svg.selectAll("g").remove();
@@ -170,28 +141,28 @@ function setupSocialMedia () {
         // instead of placing each individually with x/y attributes
         // place them with a "translate" transform
     .attr("transform",
-          function(d,i) { return "translate("+(s.margin+(i*2)*barWidth)+",0)"; });
+          function(d,i) { return "translate(0,"+(s.margin+(i*2)*barHeight)+")"; });
 
     sel.append("rect")
     .attr("class","bar")
-        .attr("x",0)
-    .attr("y",s.height-s.margin)
-    .attr("width",barWidth)
-    .attr("height",0);
+        .attr("x", s.width-s.margin)
+    .attr("y",0)
+    .attr("height",barHeight)
+    .attr("width",0);
 
     sel.append("text")
     .attr("class","value")
-    .attr("x",barWidth/2)
-    .attr("y",s.height-s.margin-20)
+    .attr("x",s.width-s.margin-20)
+    .attr("y",barHeight/2)
     .attr("dy","0.3em")
     .style("text-anchor","middle");
 
     sel.append("text")
     .attr("class","label")
-    .attr("x",barWidth/2)
-    .attr("y",s.margin+s.chartHeight+50)
+    .attr("x", s.margin+50)
+    .attr("y", barHeight/2)
     .attr("dy","0.3em")
-    .style("text-anchor","middle")
+    .style("text-anchor","end")
     .text(function(d) { return d; });
 }
 
@@ -202,7 +173,7 @@ function updateSocialMedia () {
     var svg = d3.select("#viz");
     var s = computeSizes(svg);
 
-    var barWidth = s.chartWidth/(2*GLOBAL.countries.length-1);
+    var barHeight = s.chartHeight/(2*GLOBAL.countries.length-1);
 
     // group data by values of gender/age/race columns
     // independently, and accumulate the various counts
@@ -214,18 +185,13 @@ function updateSocialMedia () {
     GLOBAL.countries.forEach(function(country, i){
     var c = countSplitByColumn(GLOBAL.data, function (r) { 
       return r.COUNTRY ===  country}, "Q1"); 
-      total_count = c.all;
       counts[i] = c.counts;
     });
-    console.log(counts);
-
-
 
     d3.select("#span-base") 
     .text(total_count);
 
     total_count = 1000;
-
 
     // convert the counts dictionaries into arrays
     // easier to work with in d3
@@ -234,12 +200,12 @@ function updateSocialMedia () {
 
     counts.forEach(function(c,i) { 
     // first convert to an array of entries
-    var d = d3.entries(c);  
-        // sort them
-    d.sort(function(a,b) { return d3.ascending(a.key,b.key); });
-    // then cumulate them
-    cumulate(d);
-    counts[i] = d;
+        var d = d3.entries(c);  
+            // sort them
+        d.sort(function(a,b) { return d3.ascending(a.key,b.key); });
+        // then cumulate them
+        cumulate(d);
+        counts[i] = d;
     })
 
 
@@ -254,29 +220,27 @@ function updateSocialMedia () {
     "Refused": colorsRng[3]
     };
 
-    var yPos = d3.scale.linear() 
+    var xPos = d3.scale.linear() 
     .domain([0,total_count])
-    .range([s.height-s.margin,s.margin]);
+    .range([s.margin+55, s.width-s.margin]);
 
-    var height = d3.scale.linear() 
+    var width = d3.scale.linear() 
     .domain([0,total_count])
-    .range([0,s.chartHeight]);
-
+    .range([0,s.chartWidth-55]);
 
     sel = svg.selectAll("g") 
-    .data(counts);
+        .data(counts);
 
     var bars = sel.selectAll(".bar")
-    .data(function(d) { return d;});
+        .data(function(d) { return d;});
 
-    console.log("barwidth", barWidth);
     bars.enter().append("rect")
-    .attr("class","bar")
-    .style("fill",function(d,i) {
-      return colors[d.key]; })
-    .attr("y",yPos(0))
-    .attr("height",0)
-    .attr("width",barWidth);
+        .attr("class","bar")
+        .style("fill",function(d,i) {
+          return colors[d.key]; })
+        .attr("x",xPos(0))
+        .attr("width",0)
+        .attr("height",barHeight);
     bars.exit().remove()
 
     sel.selectAll(".bar")
@@ -284,8 +248,10 @@ function updateSocialMedia () {
     .on("mouseout",function(d,i) { this.style.fill = colors[d.key]; })
     .transition()
     .duration(1000)
-    .attr("y",function(d) { return yPos(d.cumulative+d.value); })
-    .attr("height",function(d) { return height(d.value); })
+    .attr("x",function(d) {
+        return xPos(d.cumulative/d.sum*total_count); })
+    .attr("width",function(d) {
+        return width(d.value/d.sum*total_count); })
     .style("fill",function(d,i) { return colors[d.key]; })
 
     var values = sel.selectAll(".value")
@@ -293,8 +259,8 @@ function updateSocialMedia () {
 
     values.enter().append("text")
     .attr("class","value")
-    .attr("x",barWidth/2)
-    .attr("y",s.height-s.margin)
+    .attr("y",barHeight/2)
+    .attr("x",s.width-s.margin)
     .attr("dy","0.3em")
     .style("text-anchor","middle")
     values.exit().remove();
@@ -303,16 +269,21 @@ function updateSocialMedia () {
     .style("fill","white")
     .transition()
     .duration(1000)
-    .attr("y",function(d) { return yPos(d.cumulative+d.value/2); })
-    .text(function(d) { return Math.round(100*d.value/total_count)+"%"; });
+    .attr("x",function(d) { return xPos((d.cumulative+d.value/2)/d.sum*total_count); })
+    .text(function(d) { return Math.round(100*d.value/d.sum)+"%"; });
 }
 
 
 function cumulate (arr) {
+    var sum= 0;
+    for (var i=0; i<arr.length; i++) {
+        sum += arr[i].value;
+    }
     var cumulative = 0;
     for (var i=0; i<arr.length; i++) {
-    arr[i].cumulative = cumulative;
-    cumulative += arr[i].value;
+        arr[i].cumulative = cumulative;
+        arr[i].sum = sum
+        cumulative += arr[i].value;
     }
 }
 
@@ -329,8 +300,9 @@ function countSplitByColumn (data, selectors, question) {
         counts[c] = 1;
         }
     }
+    // counts.all = all
     });
-    return {all:all,counts:counts};
+    return {counts:counts};
 }
 
 function computeSizes (svg) { 
@@ -354,8 +326,8 @@ function computeSizes (svg) {
    just use the default python web server */
 
 function getDataRows (f) {
-    d3.csv("america.csv", function(error,data) {
-               console.log(data);
+    d3.csv("europe.csv", function(error,data) {
+               // console.log(data);
 	       f(data);
 	   });
 }
