@@ -63,12 +63,12 @@ span.top-align {
 
     <div>
       <span>
-	<span class="top-align">Gender:</span>
-	<select class="filter" id="select-gender" multiple></select>
-	<span class="top-align">Age group:</span>
-	<select class="filter" id="select-age" multiple></select>
-	<span  class="top-align">Race:</span>
-	<select class="filter" id="select-race" multiple></select>
+	<span class="top-align">Religion:</span>
+	<select class="filter" id="select-religion" multiple></select>
+	<span  class="top-align">Current Economic Situation:</span>
+	<select class="filter" id="select-economic" multiple></select>
+    <span class="top-align">Gender:</span>
+    <select class="filter" id="select-gender" multiple></select>
 	<span class="top-align">Base:</span>
 	<span class="top-align" id="span-base"></span>
       </span>
@@ -92,34 +92,89 @@ window.addEventListener("load",run);
       
 var GLOBAL = { data: [],
            countries: [
-"Britain",
-"France",
-"Germany",
-"Italy",
-"Spain",
-"Greece",
-"Poland",
-"Czech Republic",
-"Turkey"],
+"United States",
+"Canada",
+"Mexico",
+"Argentina",
+"Brazil",
+"Bolivia",
+"Chile",
+"El Salvador",
+"Venezuela"],
            segments: ["Religion"],
            update: updateSocialMedia
          }
 
 function run () {
-    // initializeView();
-    // get data, call f when done
- //    getDataRows(function(data) {
- //        populateSelectors(data);
-	// setupEventListeners();
-	// DATA.all = data;
-	// updateData() });
-  getDataRows(function(data){
-    GLOBAL.data = data;
-    // updateOverview();
+
     setupSocialMedia();
+  getDataRows(function(data){
+    populateSelectors(data);
+    GLOBAL.data = data;
+    setupEventListeners();
     updateSocialMedia();
   })
 }    
+
+function setupEventListeners () { 
+    d3.selectAll("select.filter")
+    .on("change",function() { GLOBAL.update(); })   
+        // nice use of higher-order functions
+}
+
+
+function populateSelectors (data) { 
+    var religions = d3.set();
+    var economics = d3.set();
+    var genders = d3.set();
+
+
+    data.forEach(function(r) {
+        economics.add(r.Q6.replace(/'/g, ''));
+        genders.add(r.Q164);
+    });
+    
+    // d3.select("#select-religion")
+    //     .selectAll("option")
+    //     .data(religions.values().sort())
+    //     .enter()
+    //     .append("option")
+    //     .attr("value",function(d) { return d; })
+    //         .property("selected",true)
+    //     .text(function(d) { return d;});
+
+    d3.select("#select-economic")
+        .selectAll("option")
+        .data(economics.values().sort())
+        .enter()
+        .append("option")
+        .attr("value",function(d) { return d; })
+            .property("selected",true)
+        .text(function(d) { return d;});
+
+    d3.select("#select-gender")
+        .selectAll("option")
+        .data(genders.values().sort())
+        .enter()
+        .append("option")
+        .attr("value",function(d) { return d; })
+            .property("selected",true)
+        .text(function(d) { return d;});
+
+
+}
+
+
+function isSelected (selectorId,val) {
+    return d3.select("#"+selectorId+" > option[value='"+val+"']")
+    .property("selected");
+}
+
+
+function keepSelectorsRow (r) { 
+    return (isSelected("select-gender", r.Q164) && isSelected("select-economic", r.Q6.replace(/'/g, '')));
+            
+}
 
 function setupSocialMedia () {
 
@@ -146,21 +201,21 @@ function setupSocialMedia () {
     sel.append("rect")
     .attr("class","bar")
         .attr("x", s.width-s.margin)
-    .attr("y",0)
+    .attr("y",s.yStart)
     .attr("height",barHeight)
     .attr("width",0);
 
     sel.append("text")
     .attr("class","value")
     .attr("x",s.width-s.margin-20)
-    .attr("y",barHeight/2)
+    .attr("y",s.yStart + barHeight/2)
     .attr("dy","0.3em")
     .style("text-anchor","middle");
 
     sel.append("text")
     .attr("class","label")
     .attr("x", s.margin+50)
-    .attr("y", barHeight/2)
+    .attr("y", s.yStart + barHeight/2)
     .attr("dy","0.3em")
     .style("text-anchor","end")
     .text(function(d) { return d; });
@@ -184,7 +239,7 @@ function updateSocialMedia () {
     
     GLOBAL.countries.forEach(function(country, i){
     var c = countSplitByColumn(GLOBAL.data, function (r) { 
-      return r.COUNTRY ===  country}, "Q1"); 
+      return keepSelectorsRow(r) && r.COUNTRY ===  country}, "Q1"); 
       counts[i] = c.counts;
     });
 
@@ -208,7 +263,12 @@ function updateSocialMedia () {
         counts[i] = d;
     })
 
-
+    var answers = [
+        "Dissatisfied",
+        "Satisfied",
+        "Don't know",
+        "Refused"
+]
     // colors for the groups
 
     var colorsRng = ["#003b5c","#227fb6","#67bbe2","#9bddf8"];
@@ -238,39 +298,64 @@ function updateSocialMedia () {
         .attr("class","bar")
         .style("fill",function(d,i) {
           return colors[d.key]; })
+        .attr("y",s.yStart)
         .attr("x",xPos(0))
         .attr("width",0)
         .attr("height",barHeight);
     bars.exit().remove()
 
     sel.selectAll(".bar")
-    .on("mouseover",function() { this.style.fill = "grey"; })
-    .on("mouseout",function(d,i) { this.style.fill = colors[d.key]; })
-    .transition()
-    .duration(1000)
-    .attr("x",function(d) {
-        return xPos(d.cumulative/d.sum*total_count); })
-    .attr("width",function(d) {
-        return width(d.value/d.sum*total_count); })
-    .style("fill",function(d,i) { return colors[d.key]; })
+        .on("mouseover",function() { this.style.fill = "grey"; })
+        .on("mouseout",function(d,i) { this.style.fill = colors[d.key]; })
+        .transition()
+        .duration(1000)
+        .attr("x",function(d) {
+            return xPos(d.cumulative/d.sum*total_count); })
+        .attr("width",function(d) {
+            return width(d.value/d.sum*total_count); })
+        .style("fill",function(d,i) { return colors[d.key]; })
 
     var values = sel.selectAll(".value")
-    .data(function(d) { return d;});
+        .data(function(d) { return d;});
 
     values.enter().append("text")
-    .attr("class","value")
-    .attr("y",barHeight/2)
-    .attr("x",s.width-s.margin)
-    .attr("dy","0.3em")
-    .style("text-anchor","middle")
+        .attr("class","value")
+        .attr("y",s.yStart +barHeight/2)
+        .attr("x",s.width-s.margin)
+        .attr("dy","0.3em")
+        .style("text-anchor","middle")
     values.exit().remove();
 
     sel.selectAll(".value")
-    .style("fill","white")
-    .transition()
-    .duration(1000)
-    .attr("x",function(d) { return xPos((d.cumulative+d.value/2)/d.sum*total_count); })
-    .text(function(d) { return Math.round(100*d.value/d.sum)+"%"; });
+        .style("fill","white")
+        .transition()
+        .duration(1000)
+        .attr("x",function(d) { return xPos((d.cumulative+d.value/2)/d.sum*total_count); })
+        .text(function(d) { return Math.round(100*d.value/d.sum)+"%"; });
+
+    // legend
+    var legend = svg.selectAll(".legend")
+        .data(answers)
+        .enter()
+        .append("g")
+        .attr("class", "legend");
+
+    legend.append("rect")
+        .attr("x", s.chartWidth - s.legendMargin*3)
+        .attr("y", function(d, i){ return i * 25 + s.legendMargin;})
+        .attr("width", 20)
+        .attr("height", 20)
+        .style("fill", function(d,i) { 
+            return colorsRng[i];
+        });
+    legend.append("text")
+      .attr("x", s.chartWidth-s.legendMargin )
+      .attr("y", function(d, i){ return i * 25 + s.legendMargin*1.8;})
+      .attr("dy", ".35em")
+      .style("text-anchor", "start")
+      .text(function(d) { 
+        console.log(d);
+        return d; });
 }
 
 
@@ -318,7 +403,11 @@ function computeSizes (svg) {
         width: width,
         margin: margin,
         chartHeight: height-2*margin,
-        chartWidth: width-2*margin}
+        chartWidth: width-2*margin,
+        yStart: 30,
+        legendMargin: 15
+
+    }
 }  
 
 /* depending on your browser and your local configuration,
@@ -326,7 +415,7 @@ function computeSizes (svg) {
    just use the default python web server */
 
 function getDataRows (f) {
-    d3.csv("europe.csv", function(error,data) {
+    d3.csv("america.csv", function(error,data) {
                // console.log(data);
 	       f(data);
 	   });
