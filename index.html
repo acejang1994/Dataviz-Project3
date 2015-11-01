@@ -63,18 +63,28 @@ span.top-align {
 
     <div>
       <span>
-	<span class="top-align">Religion:</span>
-	<select class="filter" id="select-religion" multiple></select>
 	<span  class="top-align">Current Economic Situation:</span>
 	<select class="filter" id="select-economic" multiple></select>
     <span class="top-align">Gender:</span>
     <select class="filter" id="select-gender" multiple></select>
 	<span class="top-align">Base:</span>
-	<span class="top-align" id="span-base"></span>
-      </span>
     </div>
+    <button type="button" id = "Q1">Opinion on Country</button>
+    <button type="button" id = "Q48">American Influence</button>
+    <button type="button" id = "Q38">Obama</button>
+    <button type="button" id = "Q66">Internet</button>
+    <button type="button" id = "Q26">Morals</button>
     <div>
-    <svg id="viz" height="800" width="1000" style="border: 1px solid grey;">
+    <svg id="viz1" height="800" width="1000" style="border: 1px solid grey;">
+    </svg>
+    <svg id="viz2" height="800" width="1000" style="border: 1px solid grey; display: none; ">
+    </svg>
+        <svg id="viz3" height="800" width="1000" style="border: 1px solid grey; display: none;">
+    </svg>
+       <svg id="viz4" height="800" width="1000" style="border: 1px solid grey; display: none;">
+    </svg>
+    <svg id="viz5" height="800" width="1000" style="border: 1px solid grey; display: none;">
+    </svg>
     </svg>
     </div>
 
@@ -89,9 +99,58 @@ span.top-align {
 // call run when the page finishes loading
 
 window.addEventListener("load",run);
+var countrieslist = [
+"El Salvador",
+"United States",
+"Canada",
+"Mexico",
+"Argentina",
+"Brazil",
+"Bolivia",
+"Chile",
+"Venezuela"];
       
 var GLOBAL = { data: [],
-           countries: [
+           countriesQ1: [
+"United States",
+"Canada",
+"Mexico",
+"Argentina",
+"Brazil",
+"Bolivia",
+"Chile",
+"El Salvador",
+"Venezuela"],
+
+countriesQ48: [
+"Mexico",
+"Argentina",
+"Brazil",
+"Bolivia",
+"Chile",
+"El Salvador",
+"Venezuela"],
+
+countriesQ66: [
+"Mexico",
+"Argentina",
+"Brazil",
+"Bolivia",
+"Chile",
+"El Salvador",
+"Venezuela"],
+
+countriesQ26: [ 
+"Canada",
+"Mexico",
+"Argentina",
+"Brazil",
+"Bolivia",
+"Chile",
+"El Salvador",
+"Venezuela"],
+
+countriesQ38: [ 
 "United States",
 "Canada",
 "Mexico",
@@ -102,19 +161,78 @@ var GLOBAL = { data: [],
 "El Salvador",
 "Venezuela"],
            segments: ["Religion"],
-           update: updateSocialMedia
+           update: newOverview,
+           question: ["Q1"],
+           svg_id: ["viz1"]
          }
 
 function run () {
 
-    setupSocialMedia();
   getDataRows(function(data){
     populateSelectors(data);
     GLOBAL.data = data;
     setupEventListeners();
-    updateSocialMedia();
-  })
-}    
+
+    chooseView("viz1");
+
+    setupSocialMedia("viz1", GLOBAL.countriesQ1);
+    updateSocialMedia("Q1", "viz1", GLOBAL.countriesQ1);
+
+    setupSocialMedia("viz2", GLOBAL.countriesQ48);
+    updateSocialMedia("Q48", "viz2", GLOBAL.countriesQ48);
+
+    setupSocialMedia("viz3", GLOBAL.countriesQ66);
+    updateSocialMedia("Q66", "viz3", GLOBAL.countriesQ66);
+
+    setupSocialMedia("viz4", GLOBAL.countriesQ26);
+    updateSocialMedia("Q26", "viz4", GLOBAL.countriesQ26);
+
+    setupSocialMedia("viz5", GLOBAL.countriesQ38);
+    updateSocialMedia("Q38", "viz5", GLOBAL.countriesQ38);
+
+
+    d3.select("#Q1").on("click",function(){
+        chooseView("viz1");
+        GLOBAL.question = ["Q1"];
+        GLOBAL.svg_id = ["viz1"];
+    })
+    d3.select("#Q48").on("click",function(){
+        chooseView("viz2");
+        GLOBAL.question = ["Q48"];
+        GLOBAL.svg_id = ["viz2"];
+    })
+      d3.select("#Q66").on("click",function(){
+        chooseView("viz3");
+        GLOBAL.question = ["Q66"];
+        GLOBAL.svg_id = ["viz3"];
+    })
+
+    d3.select("#Q26").on("click",function(){
+        chooseView("viz4");
+        GLOBAL.question = ["Q26"];
+        GLOBAL.svg_id = ["viz4"];
+    })
+
+    d3.select("#Q38").on("click",function(){
+        chooseView("viz5");
+        GLOBAL.question = ["Q38"];
+        GLOBAL.svg_id = ["viz5"];
+    })
+})}    
+
+function updateOverview (countrieslist) { 
+    //console.log("updatesocial");
+    setupSocialMedia(GLOBAL.svg_id, countrieslist);
+    GLOBAL.update = updateSocialMedia;
+    updateSocialMedia(GLOBAL.question, GLOBAL.svg_id, countrieslist); 
+}
+
+function chooseView(id){
+        // hide both, reveal one
+    d3.selectAll("svg").style("display","none");
+    d3.select("#"+id).style("display","block");
+
+}
 
 function setupEventListeners () { 
     d3.selectAll("select.filter")
@@ -171,16 +289,22 @@ function isSelected (selectorId,val) {
 }
 
 
-function keepSelectorsRow (r) { 
+function keepSelectorsRow (r) {
     return (isSelected("select-gender", r.Q164) && isSelected("select-economic", r.Q6.replace(/'/g, '')));
             
 }
 
-function setupSocialMedia () {
+function newOverview(){
+    setupSocialMedia(GLOBAL.svg_id, GLOBAL.countriesQ1);
+    GLOBAL.update = newOverview;
+    updateSocialMedia(GLOBAL.question, GLOBAL.svg_id, GLOBAL.countriesQ1); 
+}
 
-    var svg = d3.select("#viz");
+function setupSocialMedia (svg_id, countrieslist) {
+
+    var svg = d3.select("#"+svg_id);
     var s = computeSizes(svg);
-    var barHeight = s.chartHeight/(2*GLOBAL.countries.length-1);
+    var barHeight = s.chartHeight/(2* countrieslist.length-1);
 
 
     // get rid of old view
@@ -190,7 +314,7 @@ function setupSocialMedia () {
     .text("Satisfied");
 
     sel = svg.selectAll("g")
-    .data(GLOBAL.countries)
+    .data(countrieslist)
     .enter().append("g")
         // alternate way to position bars
         // instead of placing each individually with x/y attributes
@@ -221,14 +345,12 @@ function setupSocialMedia () {
     .text(function(d) { return d; });
 }
 
-function updateSocialMedia () {
+function updateSocialMedia (question, svg_id, countrieslist) {
 
-    console.log("UPDATING SOCIAL MEDIA");
-
-    var svg = d3.select("#viz");
+    var svg = d3.select("#"+svg_id);
     var s = computeSizes(svg);
 
-    var barHeight = s.chartHeight/(2*GLOBAL.countries.length-1);
+    var barHeight = s.chartHeight/(2*countrieslist.length-1);
 
     // group data by values of gender/age/race columns
     // independently, and accumulate the various counts
@@ -237,7 +359,7 @@ function updateSocialMedia () {
     var counts = [];
     var total_count = 0;
     
-    GLOBAL.countries.forEach(function(country, i){
+    countrieslist.forEach(function(country, i){
     var c = countSplitByColumn(GLOBAL.data, function (r) { 
       return keepSelectorsRow(r) && r.COUNTRY ===  country}, "Q1"); 
       counts[i] = c.counts;
@@ -354,7 +476,6 @@ function updateSocialMedia () {
       .attr("dy", ".35em")
       .style("text-anchor", "start")
       .text(function(d) { 
-        console.log(d);
         return d; });
 }
 
