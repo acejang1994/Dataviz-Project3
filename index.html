@@ -75,15 +75,15 @@ span.top-align {
     <button type="button" id = "Q66">Internet</button>
     <button type="button" id = "Q26">Morals</button>
     <div>
-    <svg id="viz1" height="800" width="1000" style="border: 1px solid grey;">
+    <svg id="viz1" height="900" width="1000" style="border: 1px solid grey;">
     </svg>
-    <svg id="viz2" height="800" width="1000" style="border: 1px solid grey; display: none; ">
+    <svg id="viz2" height="900" width="1000" style="border: 1px solid grey; display: none; ">
     </svg>
-        <svg id="viz3" height="800" width="1000" style="border: 1px solid grey; display: none;">
+        <svg id="viz3" height="900" width="1000" style="border: 1px solid grey; display: none;">
     </svg>
-       <svg id="viz4" height="800" width="1000" style="border: 1px solid grey; display: none;">
+       <svg id="viz4" height="900" width="1000" style="border: 1px solid grey; display: none;">
     </svg>
-    <svg id="viz5" height="800" width="1000" style="border: 1px solid grey; display: none;">
+    <svg id="viz5" height="900" width="1000" style="border: 1px solid grey; display: none;">
     </svg>
     </svg>
     </div>
@@ -160,11 +160,18 @@ countriesQ38: [
 "Chile",
 "El Salvador",
 "Venezuela"],
-           segments: ["Religion"],
            update: newOverview,
-           question: ["Q1"],
-           svg_id: ["viz1"]
+           question: "Q1",
+           svg_id: "viz1",
+           map: {
+            "Q1" : "Are you satisfied or dissatisfied with the way things are going in our country today?",
+            "Q26" : "Which one of these comes closest to your opinion, number 1 or number 2?",
+            "Q38" : "How much confidence do you have in U.S. President Barack Obama to do the right thing regarding world affairs?",
+            "Q48" : "Which of the following phrases comes closer to your view?",
+            "Q66" : "Do you use the internet, at least occasionally?"
+           }
          }
+
 
 function run () {
 
@@ -175,54 +182,53 @@ function run () {
 
     chooseView("viz1");
 
-    setupSocialMedia("viz1", GLOBAL.countriesQ1);
+    setupSocialMedia("Q1", "viz1", GLOBAL.countriesQ1);
     updateSocialMedia("Q1", "viz1", GLOBAL.countriesQ1);
 
-    setupSocialMedia("viz2", GLOBAL.countriesQ48);
+    setupSocialMedia("Q48", "viz2", GLOBAL.countriesQ48);
     updateSocialMedia("Q48", "viz2", GLOBAL.countriesQ48);
 
-    setupSocialMedia("viz3", GLOBAL.countriesQ66);
+    setupSocialMedia("Q66","viz3", GLOBAL.countriesQ66);
     updateSocialMedia("Q66", "viz3", GLOBAL.countriesQ66);
 
-    setupSocialMedia("viz4", GLOBAL.countriesQ26);
+    setupSocialMedia("Q26","viz4", GLOBAL.countriesQ26);
     updateSocialMedia("Q26", "viz4", GLOBAL.countriesQ26);
 
-    setupSocialMedia("viz5", GLOBAL.countriesQ38);
+    setupSocialMedia("Q38", "viz5", GLOBAL.countriesQ38);
     updateSocialMedia("Q38", "viz5", GLOBAL.countriesQ38);
 
 
     d3.select("#Q1").on("click",function(){
         chooseView("viz1");
-        GLOBAL.question = ["Q1"];
-        GLOBAL.svg_id = ["viz1"];
+        GLOBAL.question = "Q1";
+        GLOBAL.svg_id = "viz1";
     })
     d3.select("#Q48").on("click",function(){
         chooseView("viz2");
-        GLOBAL.question = ["Q48"];
-        GLOBAL.svg_id = ["viz2"];
+        GLOBAL.question = "Q48";
+        GLOBAL.svg_id = "viz2";
     })
       d3.select("#Q66").on("click",function(){
         chooseView("viz3");
-        GLOBAL.question = ["Q66"];
-        GLOBAL.svg_id = ["viz3"];
+        GLOBAL.question = "Q66";
+        GLOBAL.svg_id = "viz3";
     })
 
     d3.select("#Q26").on("click",function(){
         chooseView("viz4");
-        GLOBAL.question = ["Q26"];
-        GLOBAL.svg_id = ["viz4"];
+        GLOBAL.question = "Q26";
+        GLOBAL.svg_id = "viz4";
     })
 
     d3.select("#Q38").on("click",function(){
         chooseView("viz5");
-        GLOBAL.question = ["Q38"];
-        GLOBAL.svg_id = ["viz5"];
+        GLOBAL.question = "Q38";
+        GLOBAL.svg_id = "viz5";
     })
 })}    
 
-function updateOverview (countrieslist) { 
-    //console.log("updatesocial");
-    setupSocialMedia(GLOBAL.svg_id, countrieslist);
+function updateOverview (countrieslist) {
+    setupSocialMedia(GLOBAL.question, GLOBAL.svg_id, countrieslist);
     GLOBAL.update = updateSocialMedia;
     updateSocialMedia(GLOBAL.question, GLOBAL.svg_id, countrieslist); 
 }
@@ -242,7 +248,6 @@ function setupEventListeners () {
 
 
 function populateSelectors (data) { 
-    var religions = d3.set();
     var economics = d3.set();
     var genders = d3.set();
 
@@ -251,15 +256,6 @@ function populateSelectors (data) {
         economics.add(r.Q6.replace(/'/g, ''));
         genders.add(r.Q164);
     });
-    
-    // d3.select("#select-religion")
-    //     .selectAll("option")
-    //     .data(religions.values().sort())
-    //     .enter()
-    //     .append("option")
-    //     .attr("value",function(d) { return d; })
-    //         .property("selected",true)
-    //     .text(function(d) { return d;});
 
     d3.select("#select-economic")
         .selectAll("option")
@@ -282,7 +278,6 @@ function populateSelectors (data) {
 
 }
 
-
 function isSelected (selectorId,val) {
     return d3.select("#"+selectorId+" > option[value='"+val+"']")
     .property("selected");
@@ -295,23 +290,33 @@ function keepSelectorsRow (r) {
 }
 
 function newOverview(){
-    setupSocialMedia(GLOBAL.svg_id, GLOBAL.countriesQ1);
+    setupSocialMedia(GLOBAL.question, GLOBAL.svg_id, GLOBAL.countriesQ1);
     GLOBAL.update = newOverview;
     updateSocialMedia(GLOBAL.question, GLOBAL.svg_id, GLOBAL.countriesQ1); 
 }
 
-function setupSocialMedia (svg_id, countrieslist) {
+function setupSocialMedia (question, svg_id, countrieslist) {
 
     var svg = d3.select("#"+svg_id);
     var s = computeSizes(svg);
     var barHeight = s.chartHeight/(2* countrieslist.length-1);
 
+    var colorsRng = ["#CE2D2E","#D35C2F", "#D97F30", "#DFA030",  "#E7C32D", "#F1E925"];
+
 
     // get rid of old view
     svg.selectAll("g").remove();
 
+    svg.append("text")
+        .attr("id","title")
+        .attr("x",s.width/2)
+        .attr("y",s.margin/3)
+        .attr("dy","0.3em")
+        .style("text-anchor","middle")
+        .style("font-size", 18)
+
     svg.select("#title")
-    .text("Satisfied");
+    .text(GLOBAL.map[question]);
 
     sel = svg.selectAll("g")
     .data(countrieslist)
@@ -320,7 +325,7 @@ function setupSocialMedia (svg_id, countrieslist) {
         // instead of placing each individually with x/y attributes
         // place them with a "translate" transform
     .attr("transform",
-          function(d,i) { return "translate(0,"+(s.margin+(i*2)*barHeight)+")"; });
+          function(d,i) { return "translate(0,"+(s.margin+s.legendMargin+30+(i*1.5)*barHeight)+")"; });
 
     sel.append("rect")
     .attr("class","bar")
@@ -343,6 +348,38 @@ function setupSocialMedia (svg_id, countrieslist) {
     .attr("dy","0.3em")
     .style("text-anchor","end")
     .text(function(d) { return d; });
+
+
+    var answers = d3.set();
+
+    GLOBAL.data.forEach(function(r) {
+        answers.add(r[question]);
+    });
+
+    // remove empty answers
+    answers.remove(" ");
+
+    var legend = svg.selectAll(".legend")
+        .data(answers.values())
+        .enter()
+        .append("g")
+        .attr("class", "legend");
+
+    legend.append("rect")
+        .attr("x", s.margin*2)
+        .attr("y", function(d, i){ return i * 25 + s.legendMargin;})
+        .attr("width", 20)
+        .attr("height", 20)
+        .style("fill", function(d,i) { 
+            return colorsRng[i];
+        });
+    legend.append("text")
+      .attr("x", s.margin*2 + s.legendMargin/2)
+      .attr("y", function(d, i){ return i * 25 + 68;})
+      .attr("dy", ".35em")
+      .style("text-anchor", "start")
+      .text(function(d) { 
+        return d; });
 }
 
 function updateSocialMedia (question, svg_id, countrieslist) {
@@ -385,22 +422,9 @@ function updateSocialMedia (question, svg_id, countrieslist) {
         counts[i] = d;
     })
 
-    var answers = [
-        "Dissatisfied",
-        "Satisfied",
-        "Don't know",
-        "Refused"
-]
     // colors for the groups
 
-    var colorsRng = ["#003b5c","#227fb6","#67bbe2","#9bddf8"];
-
-    var colors = {
-    "Dissatisfied": colorsRng[0],
-    "Satisfied": colorsRng[1],
-    "Don't know": colorsRng[2],
-    "Refused": colorsRng[3]
-    };
+    var colorsRng = ["#CE2D2E","#D35C2F", "#D97F30", "#DFA030",  "#E7C32D", "#F1E925"];
 
     var xPos = d3.scale.linear() 
     .domain([0,total_count])
@@ -419,7 +443,7 @@ function updateSocialMedia (question, svg_id, countrieslist) {
     bars.enter().append("rect")
         .attr("class","bar")
         .style("fill",function(d,i) {
-          return colors[d.key]; })
+          return colorsRng[i]; })
         .attr("y",s.yStart)
         .attr("x",xPos(0))
         .attr("width",0)
@@ -428,14 +452,14 @@ function updateSocialMedia (question, svg_id, countrieslist) {
 
     sel.selectAll(".bar")
         .on("mouseover",function() { this.style.fill = "grey"; })
-        .on("mouseout",function(d,i) { this.style.fill = colors[d.key]; })
+        .on("mouseout",function(d,i) { this.style.fill = colorsRng[i]; })
         .transition()
         .duration(1000)
         .attr("x",function(d) {
             return xPos(d.cumulative/d.sum*total_count); })
         .attr("width",function(d) {
             return width(d.value/d.sum*total_count); })
-        .style("fill",function(d,i) { return colors[d.key]; })
+        .style("fill",function(d,i) { return colorsRng[i]; })
 
     var values = sel.selectAll(".value")
         .data(function(d) { return d;});
@@ -455,32 +479,11 @@ function updateSocialMedia (question, svg_id, countrieslist) {
         .attr("x",function(d) { return xPos((d.cumulative+d.value/2)/d.sum*total_count); })
         .text(function(d) { return Math.round(100*d.value/d.sum)+"%"; });
 
-    // legend
-    var legend = svg.selectAll(".legend")
-        .data(answers)
-        .enter()
-        .append("g")
-        .attr("class", "legend");
-
-    legend.append("rect")
-        .attr("x", s.chartWidth - s.legendMargin*3)
-        .attr("y", function(d, i){ return i * 25 + s.legendMargin;})
-        .attr("width", 20)
-        .attr("height", 20)
-        .style("fill", function(d,i) { 
-            return colorsRng[i];
-        });
-    legend.append("text")
-      .attr("x", s.chartWidth-s.legendMargin )
-      .attr("y", function(d, i){ return i * 25 + s.legendMargin*1.8;})
-      .attr("dy", ".35em")
-      .style("text-anchor", "start")
-      .text(function(d) { 
-        return d; });
 }
 
 
 function cumulate (arr) {
+    // find the cumulative sum
     var sum= 0;
     for (var i=0; i<arr.length; i++) {
         sum += arr[i].value;
@@ -506,7 +509,6 @@ function countSplitByColumn (data, selectors, question) {
         counts[c] = 1;
         }
     }
-    // counts.all = all
     });
     return {counts:counts};
 }
@@ -526,7 +528,7 @@ function computeSizes (svg) {
         chartHeight: height-2*margin,
         chartWidth: width-2*margin,
         yStart: 30,
-        legendMargin: 15
+        legendMargin: 60
 
     }
 }  
@@ -537,29 +539,9 @@ function computeSizes (svg) {
 
 function getDataRows (f) {
     d3.csv("america.csv", function(error,data) {
-               // console.log(data);
 	       f(data);
 	   });
 }
-
-// function getQuestion1(data){
-//   var count = {country: null,Satisfied : 0, Dissatisfied : 0, "Don't know" : 0}
-//   data.forEach(function(d){
-//     count.country
-//     if (d.COUNTRY === "United States"){      
-//       if (d.Q1 === "Satisfied"){
-//         count.Satisfied += 1;  
-//       }
-//       if (d.Q1 === "Dissatisfied"){
-//         count.Dissatisfied +=1;
-//       }
-//       if (d.Q1 === "Don't know"){
-//         count["Don't know"] +=1;
-//       }  
-//     }
-//   })
-//   console.log(count);
-// }
 
       
     </script>
