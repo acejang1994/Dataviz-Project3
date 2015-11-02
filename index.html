@@ -182,21 +182,26 @@ function run () {
 
     chooseView("viz1");
 
+<<<<<<< Updated upstream
     //set up all the question views so that everything loads first
     setupSocialMedia("Q1", "viz1", GLOBAL.countriesQ1);
     updateSocialMedia("Q1", "viz1", GLOBAL.countriesQ1);
+=======
+    setupGraph("Q1", "viz1", GLOBAL.countriesQ1);
+    updateGraph("Q1", "viz1", GLOBAL.countriesQ1);
+>>>>>>> Stashed changes
 
-    setupSocialMedia("Q48", "viz2", GLOBAL.countriesQ48);
-    updateSocialMedia("Q48", "viz2", GLOBAL.countriesQ48);
+    setupGraph("Q48", "viz2", GLOBAL.countriesQ48);
+    updateGraph("Q48", "viz2", GLOBAL.countriesQ48);
 
-    setupSocialMedia("Q66","viz3", GLOBAL.countriesQ66);
-    updateSocialMedia("Q66", "viz3", GLOBAL.countriesQ66);
+    setupGraph("Q66","viz3", GLOBAL.countriesQ66);
+    updateGraph("Q66", "viz3", GLOBAL.countriesQ66);
 
-    setupSocialMedia("Q26","viz4", GLOBAL.countriesQ26);
-    updateSocialMedia("Q26", "viz4", GLOBAL.countriesQ26);
+    setupGraph("Q26","viz4", GLOBAL.countriesQ26);
+    updateGraph("Q26", "viz4", GLOBAL.countriesQ26);
 
-    setupSocialMedia("Q38", "viz5", GLOBAL.countriesQ38);
-    updateSocialMedia("Q38", "viz5", GLOBAL.countriesQ38);
+    setupGraph("Q38", "viz5", GLOBAL.countriesQ38);
+    updateGraph("Q38", "viz5", GLOBAL.countriesQ38);
 
 
     d3.select("#Q1").on("click",function(){
@@ -229,10 +234,16 @@ function run () {
 })}    
 
 function updateOverview (countrieslist) {
+<<<<<<< Updated upstream
     //sets GLOBAL.update without inputs
     setupSocialMedia(GLOBAL.question, GLOBAL.svg_id, countrieslist);
     GLOBAL.update = updateSocialMedia;
     updateSocialMedia(GLOBAL.question, GLOBAL.svg_id, countrieslist); 
+=======
+    setupGraph(GLOBAL.question, GLOBAL.svg_id, countrieslist);
+    GLOBAL.update = updateGraph;
+    updateGraph(GLOBAL.question, GLOBAL.svg_id, countrieslist); 
+>>>>>>> Stashed changes
 }
 
 function chooseView(id){
@@ -296,12 +307,14 @@ function keepSelectorsRow (r) {
 }
 
 function newOverview(){
-    setupSocialMedia(GLOBAL.question, GLOBAL.svg_id, GLOBAL.countriesQ1);
+    // sets the new overview
+    setupGraph(GLOBAL.question, GLOBAL.svg_id, GLOBAL.countriesQ1);
     GLOBAL.update = newOverview;
-    updateSocialMedia(GLOBAL.question, GLOBAL.svg_id, GLOBAL.countriesQ1); 
+    updateGraph(GLOBAL.question, GLOBAL.svg_id, GLOBAL.countriesQ1); 
 }
 
-function setupSocialMedia (question, svg_id, countrieslist) {
+function setupGraph (question, svg_id, countrieslist) {
+    // set up the graph by question and svg_id
 
     var svg = d3.select("#"+svg_id);
     var s = computeSizes(svg);
@@ -388,7 +401,8 @@ function setupSocialMedia (question, svg_id, countrieslist) {
         return d; });
 }
 
-function updateSocialMedia (question, svg_id, countrieslist) {
+function updateGraph (question, svg_id, countrieslist) {
+    // updates the graph with question and the different country list
 
     var svg = d3.select("#"+svg_id);
     var s = computeSizes(svg);
@@ -489,7 +503,7 @@ function updateSocialMedia (question, svg_id, countrieslist) {
 
 
 function cumulate (arr) {
-    // find the cumulative sum
+    // find the cumulative sum and the total sum for each point
     var sum= 0;
     for (var i=0; i<arr.length; i++) {
         sum += arr[i].value;
@@ -503,6 +517,8 @@ function cumulate (arr) {
 }
 
 function countSplitByColumn (data, selectors, question) { 
+    // returns the data with all oft column and row filters
+
     var counts = { };
     var all = 0;
     data.forEach(function(r) {
@@ -520,6 +536,7 @@ function countSplitByColumn (data, selectors, question) {
 }
 
 function computeSizes (svg) { 
+    // sets values for variables of the svgs that can be easily accessed
     
     // get the size of the SVG element
     var height = svg.attr("height");
